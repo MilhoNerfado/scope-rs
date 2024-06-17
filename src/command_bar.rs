@@ -419,6 +419,15 @@ impl CommandBar {
                     return Ok(());
                 }
 
+                if key.modifiers == KeyModifiers::CONTROL {
+                    let prev_chunk = &self.command_line[..self.command_line_idx];
+
+                    self.command_line_idx =
+                        prev_chunk.rfind(char::is_whitespace).unwrap_or_default();
+
+                    return Ok(());
+                }
+
                 self.command_line_idx -= 1;
             }
             KeyCode::Up => {
