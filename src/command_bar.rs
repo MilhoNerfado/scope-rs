@@ -412,6 +412,28 @@ impl CommandBar {
                     return Ok(());
                 }
 
+                if key.modifiers == KeyModifiers::CONTROL {
+                    let next_chunk = &self.command_line[self.command_line_idx..];
+
+                    self.command_line_idx = match next_chunk.find(char::is_whitespace) {
+                        Some(pos) => {
+                            if pos != 0 {
+                                self.command_line_idx + pos
+                            } else {
+                                match &self.command_line[self.command_line_idx + 1..]
+                                    .find(char::is_whitespace)
+                                {
+                                    Some(new_pos) => self.command_line_idx + 1 + new_pos,
+                                    _ => self.command_line.chars().count(),
+                                }
+                            }
+                        }
+                        _ => self.command_line.chars().count(),
+                    };
+
+                    return Ok(());
+                }
+
                 self.command_line_idx += 1;
             }
             KeyCode::Left => {
@@ -422,8 +444,21 @@ impl CommandBar {
                 if key.modifiers == KeyModifiers::CONTROL {
                     let prev_chunk = &self.command_line[..self.command_line_idx];
 
-                    self.command_line_idx =
-                        prev_chunk.rfind(char::is_whitespace).unwrap_or_default();
+                    self.command_line_idx = match prev_chunk.rfind(char::is_whitespace) {
+                        Some(pos) => {
+                            if pos != self.command_line_idx - 1 {
+                                pos + 1
+                            } else {
+                                match &self.command_line[..self.command_line_idx - 1]
+                                    .rfind(char::is_whitespace)
+                                {
+                                    Some(new_pos) => new_pos + 1,
+                                    _ => 0,
+                                }
+                            }
+                        }
+                        _ => 0,
+                    };
 
                     return Ok(());
                 }
