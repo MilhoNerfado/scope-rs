@@ -2,6 +2,9 @@ use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 
+use nucleo_matcher::pattern::{CaseMatching, Normalization, Pattern};
+use nucleo_matcher::{Config, Matcher};
+
 pub enum HistoryNavResult<'a> {
     /// History is empty; nothing to navigate.
     Empty,
@@ -21,6 +24,9 @@ pub struct History {
     index: Option<usize>,
     /// Snapshot of the input before the user started navigating.
     backup: String,
+
+    matcher: Matcher,
+    fuzy_entries: Vec<String>,
 }
 
 impl History {
@@ -29,6 +35,8 @@ impl History {
             entries: Vec::new(),
             index: None,
             backup: String::new(),
+            matcher: Matcher::new(Config::DEFAULT),
+            fuzy_entries: Vec::new(),
         }
     }
 
@@ -52,30 +60,43 @@ impl History {
         let idx = match self.index {
             None => {
                 self.backup = current_line.to_owned();
-                self.entries.len() - 1
+
+                let fuzy_history: Vec<String> = Pattern::parse(
+                    self.backup.as_str(),
+                    CaseMatching::Ignore,
+                    Normalization::Never,
+                )
+                .match_list(self.entries.iter(), &mut self.matcher)
+                .iter()
+                .map(|&(item, _)| item.clone())
+                .collect();
+
+                self.fuzy_entries.clone_from(&fuzy_history);
+
+                self.fuzy_entries.len() - 1
             }
             Some(0) => 0,
             Some(i) => i - 1,
         };
         self.index = Some(idx);
-        HistoryNavResult::Entry(&self.entries[idx])
+        HistoryNavResult::Entry(&self.fuzy_entries[idx])
     }
 
     /// Navigate to a newer entry, or back to the saved backup when past the newest.
     pub fn navigate_down(&mut self) -> HistoryNavResult<'_> {
-        if self.entries.is_empty() {
+        if self.fuzy_entries.is_empty() {
             return HistoryNavResult::Empty;
         }
         match self.index {
             None => HistoryNavResult::Empty,
-            Some(i) if i == self.entries.len() - 1 => {
+            Some(i) if i == self.fuzy_entries.len() - 1 => {
                 self.index = None;
                 HistoryNavResult::RestoreBackup
             }
             Some(i) => {
                 let next = i + 1;
                 self.index = Some(next);
-                HistoryNavResult::Entry(&self.entries[next])
+                HistoryNavResult::Entry(&self.fuzy_entries[next])
             }
         }
     }
