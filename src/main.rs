@@ -1,7 +1,7 @@
 #![deny(warnings)]
-
 extern crate core;
 
+mod config;
 mod graphics;
 mod infra;
 mod inputs;
@@ -9,6 +9,7 @@ mod interfaces;
 mod list;
 mod plugin;
 
+use crate::config::ScopeConfig;
 use crate::infra::tags::TagList;
 use crate::interfaces::rtt_if::{RttCommand, RttConnections, RttSetup};
 use crate::interfaces::serial_if::SerialCommand;
@@ -313,6 +314,9 @@ fn main() -> Result<(), String> {
         .expect("Error setting Ctrl-C handler");
 
     let cli = Cli::parse();
+
+    let config = ScopeConfig::load_config();
+    dbg!(config);
 
     let capacity = cli.capacity.unwrap_or(DEFAULT_CAPACITY);
     let tag_file = cli.tag_file.unwrap_or(PathBuf::from(DEFAULT_TAG_FILE));

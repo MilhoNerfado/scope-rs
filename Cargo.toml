@@ -7,6 +7,7 @@ edition = "2024"
 rust-version = "1.92.0"
 license-file = "LICENSE"
 readme = "README.md"
+default-run = "scope"
 repository = "https://github.com/matheuswhite/scope-rs"
 homepage = "https://github.com/matheuswhite/scope-rs"
 keywords = ["serial", "monitor", "windows", "linux", "plugin"]
@@ -29,6 +30,11 @@ maintenance = { status = "actively-developed" }
 name = "scope"
 path = "src/main.rs"
 
+[[bin]]
+name = "gen-docs"
+path = "src/gen_docs.rs"
+required-features = ["gen-docs"]
+
 [dependencies]
 serialport = "4.4.0"
 ratatui = "0.26.1"
@@ -42,11 +48,19 @@ clap = { version = "4.1.9", features = ["derive"] }
 mlua = { version = "0.9.6", features = ["lua54", "vendored", "async", "send"] }
 anyhow = "1.0.79"
 dirs = "5"
+toml = "1.0.4"
+config = { version = "0.15.19", features = ["toml"] }
 tokio = { version = "1.43.1", features = ["full"] }
 regex = "1.10.5"
 lipsum = "0.9.1"
 arboard = "3.6.1"
 probe-rs = "0.31.0"
+toml_edit = { version = "*", features = ["serde"] }
+toml-scaffold = { version = "0.4.0", optional = true }
+schemars = { version = "1.2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 ctrlc = "3.4.3"
+
+[features]
+gen-docs = ["dep:toml-scaffold", "dep:schemars"]
